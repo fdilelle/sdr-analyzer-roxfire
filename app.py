@@ -3,200 +3,217 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 
-st.set_page_config(page_title="AI SDR Lead Analyzer", layout="centered")
+st.set_page_config(page_title="AI SDR Analyzer", layout="centered")
 
-# -----------------------------
-# STYLE
-# -----------------------------
-
-st.markdown("""
-<style>
-
-h1 {font-size:38px}
-h2 {font-size:28px}
-p, label {font-size:18px}
-
-textarea {font-size:16px}
-
-</style>
-""", unsafe_allow_html=True)
-
-# -----------------------------
+# --------------------------
 # SESSION STATE INIT
-# -----------------------------
+# --------------------------
 
 defaults = {
+    "step": 1,
     "analysis_done": False,
     "score": None,
     "notes": [],
     "company": "",
-    "email_text": "",
-    "email_editor": "",
+    "email_text": ""
 }
 
 for k,v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# -----------------------------
+# --------------------------
 # HEADER
-# -----------------------------
+# --------------------------
 
-st.title("🚀 AI SDR Lead Analyzer")
+st.title("AI SDR Lead Analyzer")
+st.write("Website Audit + Outreach Generator")
 
-st.write("Website Audit + AI Outreach Generator")
+# --------------------------
+# STEP NAVIGATION
+# --------------------------
 
-# -----------------------------
-# STEP 1
-# -----------------------------
+st.sidebar.title("Workflow")
 
-st.header("Step 1 — Analyze Website")
+if st.sidebar.button("1 Analyze Website"):
+    st.session_state.step = 1
 
-url = st.text_input("Website URL")
+if st.sidebar.button("2 Marketing Audit"):
+    st.session_state.step = 2
 
-if st.button("Analyze Website"):
+if st.sidebar.button("3 Edit Email"):
+    st.session_state.step = 3
 
-    try:
+if st.sidebar.button("4 Upload Leads"):
+    st.session_state.step = 4
 
-        r = requests.get(url, timeout=10)
-        html = r.text.lower()
+step = st.session_state.step
 
-        soup = BeautifulSoup(r.text, "html.parser")
+# --------------------------
+# STEP 1 ANALYZE
+# --------------------------
 
-        score = 50
-        notes = []
+if step == 1:
 
-        if "form" in html:
-            score += 15
-            notes.append("Lead capture form detected")
-        else:
-            notes.append("No lead capture form detected")
+    st.header("Step 1 — Analyze Website")
 
-        if "chat" in html:
-            score += 10
-            notes.append("Live chat detected")
+    url = st.text_input("Website URL")
 
-        if "facebook" in html or "instagram" in html:
-            score += 10
-            notes.append("Social marketing detected")
+    if st.button("Analyze"):
 
-        if "gtag" in html or "googleads" in html:
-            score += 10
-            notes.append("Google Ads tracking detected")
+        try:
 
-        score = min(score,100)
+            r = requests.get(url, timeout=10)
+            html = r.text.lower()
 
-        company = soup.title.string if soup.title else "Company"
+            soup = BeautifulSoup(r.text, "html.parser")
 
-        st.session_state.analysis_done = True
-        st.session_state.score = score
-        st.session_state.notes = notes
-        st.session_state.company = company
+            score = 50
+            notes = []
 
-        if st.session_state.email_text == "":
-            template = f"""Subject: Quick idea for {company}
+            if "form" in html:
+                score += 15
+                notes.append("Lead capture form detected")
+
+            if "chat" in html:
+                score += 10
+                notes.append("Live chat detected")
+
+            if "facebook" in html or "instagram" in html:
+                score += 10
+                notes.append("Social media detected")
+
+            if "gtag" in html or "googleads" in html:
+                score += 10
+                notes.append("Google Ads tracking detected")
+
+            score = min(score,100)
+
+            company = soup.title.string if soup.title else "Company"
+
+            st.session_state.score = score
+            st.session_state.notes = notes
+            st.session_state.company = company
+            st.session_state.analysis_done = True
+
+            if st.session_state.email_text == "":
+
+                st.session_state.email_text = f"""Subject: Quick idea for {company}
 
 Hi {{name}},
 
-I was reviewing your website and noticed a few opportunities to increase inbound leads.
+I reviewed your website and noticed a few opportunities to increase inbound leads.
 
-Many companies like yours are generating consistent bookings using optimized landing pages and targeted Google Ads campaigns.
+Many companies today are generating more leads using optimized landing pages and targeted Google Ads campaigns.
 
 Would you be open to a quick 10-minute call so I can show you what I found?
 
 Best regards,
 """
 
-            st.session_state.email_text = template
-            st.session_state.email_editor = template
+            st.success("Analysis complete")
 
-    except:
-        st.error("Could not analyze website")
+        except:
+            st.error("Could not analyze website")
 
-# -----------------------------
-# STEP 2
-# -----------------------------
+# --------------------------
+# STEP 2 AUDIT
+# --------------------------
 
-if st.session_state.analysis_done:
+if step == 2:
 
-    st.header("Step 2 — Marketing Score")
+    st.header("Step 2 — Marketing Audit")
 
-    st.metric("Lead Conversion Score", f"{st.session_state.score}/100")
+    if not st.session_state.analysis_done:
+        st.warning("Run the website analysis first")
 
-    for n in st.session_state.notes:
-        st.write("•", n)
+    else:
 
-# -----------------------------
-# STEP 3
-# -----------------------------
+        st.metric("Lead Conversion Score", f"{st.session_state.score}/100")
 
-if st.session_state.analysis_done:
+        for n in st.session_state.notes:
+            st.write("•", n)
+
+# --------------------------
+# STEP 3 EMAIL EDITOR
+# --------------------------
+
+if step == 3:
 
     st.header("Step 3 — Edit Outreach Email")
 
-    def update_email():
-        st.session_state.email_text = st.session_state.email_editor
+    if not st.session_state.analysis_done:
+        st.warning("Run the analysis first")
 
-    st.text_area(
-        "Edit your email",
-        key="email_editor",
-        height=220,
-        on_change=update_email
-    )
+    else:
 
-# -----------------------------
-# STEP 4
-# -----------------------------
+        st.session_state.email_text = st.text_area(
+            "Edit email template",
+            value=st.session_state.email_text,
+            height=250
+        )
 
-if st.session_state.analysis_done:
+# --------------------------
+# STEP 4 LEADS
+# --------------------------
+
+if step == 4:
 
     st.header("Step 4 — Upload Lead List")
 
-    file = st.file_uploader("Upload CSV or Excel (columns: Name, Email, Company)")
+    if not st.session_state.analysis_done:
+        st.warning("Run the analysis first")
 
-    if file:
+    else:
 
-        if file.name.endswith(".csv"):
-            df = pd.read_csv(file)
-        else:
-            df = pd.read_excel(file)
+        file = st.file_uploader("Upload CSV or Excel (Name, Email, Company)")
 
-        st.subheader("Lead Preview")
+        if file:
 
-        st.dataframe(df.head())
+            if file.name.endswith(".csv"):
+                df = pd.read_csv(file)
+            else:
+                df = pd.read_excel(file)
 
-        emails = []
+            st.subheader("Lead Preview")
 
-        for _,row in df.iterrows():
+            st.dataframe(df.head())
 
-            body = st.session_state.email_text.replace("{name}",str(row["Name"]))
+            emails = []
 
-            emails.append(body)
+            for _,row in df.iterrows():
 
-        df["Generated Email"] = emails
+                body = st.session_state.email_text.replace(
+                    "{name}",
+                    str(row["Name"])
+                )
 
-        st.subheader("Campaign Preview")
+                emails.append(body)
 
-        st.dataframe(df.head())
+            df["Generated Email"] = emails
 
-        csv = df.to_csv(index=False)
+            st.subheader("Campaign Preview")
 
-        st.download_button(
-            "Download Campaign File",
-            csv,
-            "campaign.csv",
-            "text/csv"
-        )
+            st.dataframe(df.head())
 
-# -----------------------------
+            csv = df.to_csv(index=False)
+
+            st.download_button(
+                "Download Campaign CSV",
+                csv,
+                "campaign.csv",
+                "text/csv"
+            )
+
+# --------------------------
 # RESET
-# -----------------------------
+# --------------------------
 
-if st.session_state.analysis_done:
+st.sidebar.write("---")
 
-    if st.button("Start New Analysis"):
+if st.sidebar.button("Reset App"):
 
-        for k in list(st.session_state.keys()):
-            del st.session_state[k]
+    for k in list(st.session_state.keys()):
+        del st.session_state[k]
 
-        st.rerun()
+    st.rerun()
