@@ -2,12 +2,12 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-from datetime import date
 
 st.set_page_config(page_title="AI SDR Lead Analyzer", page_icon="🚀")
 
-st.title("AI SDR Lead Analyzer")
-st.markdown("Website Audit + Outreach Generator")
+st.title("🚀 AI SDR Lead Analyzer")
+st.markdown("Website Audit + Outreach Campaign Generator")
+
 st.caption("Built by Fernando A. Di Lelle")
 
 # ================= SIDEBAR =================
